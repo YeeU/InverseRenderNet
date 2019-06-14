@@ -3,6 +3,7 @@
 This is the implementation of the paper "InverseRenderNet: Learning single image inverse rendering". The model is implemented in tensorflow.
 
 If you use our code, please cite the following paper:
+
     @inproceedings{yu19inverserendernet,
         title={InverseRenderNet: Learning single image inverse rendering},
         author={Yu, Ye and Smith, William AP},
