@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(description='InverseRenderNet')
 parser.add_argument('--image', help='Path to test image')
 parser.add_argument('--mask', help='Path to image mask')
 parser.add_argument('--model', help='Path to trained model')
+parser.add_argument('--output', help='Folder saving outputs')
 
 
 args = parser.parse_args()
@@ -23,7 +24,7 @@ img = io.imread(img_path)
 mask = io.imread(mask_path)
 
 
-dst_dir = 'test_results'
+dst_dir = args.output
 os.makedirs(dst_dir)
 
 input_height = 200
