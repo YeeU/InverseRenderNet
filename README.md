@@ -11,7 +11,6 @@ If you use our code, please cite the following paper:
         year={2019}
     }
 
-
 ## Evaluation
 
 #### Dependencies
@@ -44,5 +43,27 @@ python3 test_demo.py --model /PATH/TO/irn_model --image demo.jpg --mask demo_mas
 ```bash
 python3 test_iiw.py --model /PATH/TO/irn_model --iiw /PATH/TO/iiw-dataset
 ```
+
+## Training
+
+#### Train from scratch
+The training for InverseRenderNet contains two stages: pre-train and self-train.
+* To begin with pre-train stage, you need to use training command specifying option `-m` to `pre-train`. 
+* After finishing pre-train stage, you can run self-train by specifying option `-m` to `self-train`. 
+
+In addition, you can control the size of batch in training, and the path to training data should be specified.
+
+An example for training command:
+```bash
+python3 train.py -n 2 -p Data -m pre-train
+```
+
+#### Data for training
+To directly use our code for training, you need to pre-process the training data to match the data format as shown in examples in `Data` folder. 
+
+In particular, we pre-process the data before training, such that five images with great overlaps are bundled up into one mini-batch, and images are resized and cropped to a shape of 200 * 200 pixels. Along with input images associated depth maps, camera parameters, sky masks and normal maps are stored in the same mini-batch. For efficiency, every mini-batch containing all training elements for 5 involved images are saved as a pickle file. While training the data feeding thread directly load each mini-batch from corresponding pickle file.
+
+
+
 
 

@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import tensorflow.contrib.layers as layers
 
-def SfMNet(inputs, height, width, n_layers=12, n_pools=2, is_training=True, depth_base=64):
+def SfMNet(inputs, height, width, name='', n_layers=12, n_pools=2, is_training=True, depth_base=64):
 	conv_layers = np.int32(n_layers/2) -1
 	deconv_layers = np.int32(n_layers/2)
 	# number of layers before perform pooling
@@ -31,81 +31,81 @@ def SfMNet(inputs, height, width, n_layers=12, n_pools=2, is_training=True, dept
 
 
 
-	batch_norm_params = {'decay':0.9, 'center':True, 'scale':True, 'epsilon':1e-4, 'param_initializers':{'beta_initializer':tf.zeros_initializer(),'gamma_initializer':tf.ones_initializer(),'moving_variance_initializer':tf.ones_initializer(),'moving_average_initializer':tf.zeros_initializer()}, 'param_regularizers':{'beta_regularizer':None,'gamma_regularizer':layers.l2_regularizer(scale=1e-5)},'is_training':is_training} 
+	batch_norm_params = {'decay':0.9, 'center':True, 'scale':True, 'epsilon':1e-4, 'param_initializers':{'beta_initializer':tf.zeros_initializer(),'gamma_initializer':tf.ones_initializer(),'moving_variance_initializer':tf.ones_initializer(),'moving_average_initializer':tf.zeros_initializer()}, 'param_regularizers':{'beta_regularizer':None,'gamma_regularizer':layers.l2_regularizer(scale=1e-5)},'is_training':is_training,'trainable':is_training} 
 
 	### contractive conv_layer block
 	conv_out = inputs
 	conv_out_list = []
 	for i,f_in,f_out in zip(range(1,conv_layers+2),f_in_conv,f_out_conv):
-		scope = 'conv'+str(i)
+		scope = name+'conv'+str(i)
 
 		if np.mod(i-1,nlayers_befPool)==0 and i<=n_pools*nlayers_befPool+1 and i != 1:
 			conv_out_list.append(conv_out)
-			conv_out = layers.conv2d(conv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope)
+			conv_out = layers.conv2d(conv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope, trainable=is_training)
 			conv_out = tf.nn.max_pool(conv_out, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
 		else:
 
-			conv_out = layers.conv2d(conv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope)
+			conv_out = layers.conv2d(conv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope, trainable=is_training)
 
 
 	### expanding deconv_layer block succeeding conv_layer block
 	am_deconv_out = conv_out
 	for i,f_in,f_out in zip(range(1,deconv_layers+1),f_in_deconv,f_out_amDeconv):
-		scope = 'am/am_deconv'+str(i)
+		scope = name+'am/am_deconv'+str(i)
 
 		# expand resolution every after nlayers_befPool deconv_layer
 		if np.mod(i,nlayers_befPool)==0 and i<=n_pools*nlayers_befPool:
 			with tf.variable_scope(scope):
-				W = tf.get_variable(regularizer=layers.l2_regularizer(scale=1e-5),initializer=get_bilinear_filter([3,3,f_out,f_in],2),shape=[3,3,f_out,f_in],name='filter')	
-
+				W = tf.get_variable(regularizer=layers.l2_regularizer(scale=1e-5),initializer=get_bilinear_filter([3,3,f_out,f_in],2),shape=[3,3,f_out,f_in],name='filter', trainable=is_training)	
+				# import ipdb; ipdb.set_trace()
 				# attach previous convolutional output to upsampling/deconvolutional output
 				tmp = conv_out_list[-np.int32(i/nlayers_befPool)]
 				output_shape = tf.shape(tmp)
 				am_deconv_out = tf.nn.conv2d_transpose(am_deconv_out,filter=W,output_shape=output_shape,strides=[1,2,2,1],padding='SAME')
-				am_deconv_out = layers.batch_norm(scope=scope,activation_fn=tf.nn.relu,inputs=am_deconv_out,decay=0.9, center=True, scale=True, param_initializers={'beta_initializer':tf.zeros_initializer(),'gamma_initializer':tf.ones_initializer(),'moving_variance_initializer':tf.ones_initializer(),'moving_average_initializer':tf.zeros_initializer()}, param_regularizers={'beta_regularizer':None,'gamma_regularizer':layers.l2_regularizer(scale=1e-5)},is_training=is_training)
+				am_deconv_out = layers.batch_norm(scope=scope,activation_fn=tf.nn.relu,inputs=am_deconv_out,decay=0.9, center=True, scale=True, param_initializers={'beta_initializer':tf.zeros_initializer(),'gamma_initializer':tf.ones_initializer(),'moving_variance_initializer':tf.ones_initializer(),'moving_average_initializer':tf.zeros_initializer()}, param_regularizers={'beta_regularizer':None,'gamma_regularizer':layers.l2_regularizer(scale=1e-5)},is_training=is_training,trainable=is_training)
 
 
-			tmp = layers.conv2d(tmp,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope)
+			tmp = layers.conv2d(tmp,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope,trainable=is_training)
 			am_deconv_out = tmp + am_deconv_out
 
 
 		elif i==deconv_layers:
-			am_deconv_out = layers.conv2d(am_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=None,activation_fn=None,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),scope=scope)
+			am_deconv_out = layers.conv2d(am_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=None,activation_fn=None,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),scope=scope,trainable=is_training)
 
 
 		else:
-			am_deconv_out = layers.conv2d(am_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope)
+			am_deconv_out = layers.conv2d(am_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope,trainable=is_training)
 
 
 
 	### deconvolution net for nm estimates
 	nm_deconv_out = conv_out
 	for i,f_in,f_out in zip(range(1,deconv_layers+1),f_in_deconv,f_out_nmDeconv):
-		scope = 'nm/nm'+str(i)
+		scope = name+'nm/nm'+str(i)
 
 		# expand resolution every after nlayers_befPool deconv_layer
 		if np.mod(i,nlayers_befPool)==0 and i<=n_pools*nlayers_befPool:
 			with tf.variable_scope(scope):
-				W = tf.get_variable(regularizer=layers.l2_regularizer(scale=1e-5),initializer=get_bilinear_filter([3,3,f_out,f_in],2),shape=[3,3,f_out,f_in],name='filter')	
+				W = tf.get_variable(regularizer=layers.l2_regularizer(scale=1e-5),initializer=get_bilinear_filter([3,3,f_out,f_in],2),shape=[3,3,f_out,f_in],name='filter',trainable=is_training)	
 
 				# attach previous convolutional output to upsampling/deconvolutional output
 				tmp = conv_out_list[-np.int32(i/nlayers_befPool)]
 				output_shape = tf.shape(tmp)
 				nm_deconv_out = tf.nn.conv2d_transpose(nm_deconv_out,filter=W,output_shape=output_shape,strides=[1,2,2,1],padding='SAME')
-				nm_deconv_out = layers.batch_norm(scope=scope,activation_fn=tf.nn.relu,inputs=nm_deconv_out,decay=0.9, center=True, scale=True, epsilon=1e-4, param_initializers={'beta_initializer':tf.zeros_initializer(),'gamma_initializer':tf.ones_initializer(),'moving_variance_initializer':tf.ones_initializer(),'moving_average_initializer':tf.zeros_initializer()}, param_regularizers={'beta_regularizer':None,'gamma_regularizer':layers.l2_regularizer(scale=1e-5)},is_training=is_training)
+				nm_deconv_out = layers.batch_norm(scope=scope,activation_fn=tf.nn.relu,inputs=nm_deconv_out,decay=0.9, center=True, scale=True, epsilon=1e-4, param_initializers={'beta_initializer':tf.zeros_initializer(),'gamma_initializer':tf.ones_initializer(),'moving_variance_initializer':tf.ones_initializer(),'moving_average_initializer':tf.zeros_initializer()}, param_regularizers={'beta_regularizer':None,'gamma_regularizer':layers.l2_regularizer(scale=1e-5)},is_training=is_training,trainable=is_training)
 
 
-			tmp = layers.conv2d(tmp,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope)
+			tmp = layers.conv2d(tmp,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope,trainable=is_training)
 			nm_deconv_out = tmp + nm_deconv_out
 
 
 		elif i==deconv_layers:
-			nm_deconv_out = layers.conv2d(nm_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=None,activation_fn=None,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope)
+			nm_deconv_out = layers.conv2d(nm_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=None,activation_fn=None,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope,trainable=is_training)
 
 
 		else:
-			nm_deconv_out = layers.conv2d(nm_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope)
+			nm_deconv_out = layers.conv2d(nm_deconv_out,num_outputs=f_out,kernel_size=[3,3],stride=[1,1],padding='SAME',normalizer_fn=layers.batch_norm, normalizer_params=batch_norm_params,weights_initializer=tf.random_normal_initializer(mean=0,stddev=np.sqrt(2/9/f_in)),weights_regularizer=layers.l2_regularizer(scale=1e-5),biases_initializer=None,scope=scope,trainable=is_training)
 
 
 
