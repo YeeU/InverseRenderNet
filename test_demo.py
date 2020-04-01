@@ -53,11 +53,10 @@ def pinv(A, reltol=1e-6):
 	return tf.matmul(v, tf.matmul(s_inv, tf.transpose(u)))
 
 
-
+import ipdb; ipdb.set_trace()
 inputs_var = tf.placeholder(tf.float32, (None, input_height, input_width, 3))
 masks_var = tf.placeholder(tf.float32, (None, input_height, input_width, 1))
-train_flag = tf.placeholder(tf.bool, ())
-am_deconvOut, nm_deconvOut = SfMNet.SfMNet(inputs=inputs_var,is_training=train_flag, height=input_height, width=input_width, n_layers=30, n_pools=4, depth_base=32)
+am_deconvOut, nm_deconvOut = SfMNet.SfMNet(inputs=inputs_var,is_training=False, height=input_height, width=input_width, n_layers=30, n_pools=4, depth_base=32)
 
 
 # separate albedo, error mask and shadow mask from deconvolutional output
@@ -112,7 +111,7 @@ img = img[None, :, :, :]
 mask = cv2.resize(mask, (input_width, input_height), cv2.INTER_NEAREST)
 mask = np.float32(mask==255)[None,:,:,None]
 
-[albedos_val, nm_pred_val, lighting_recon_val, shading_val] = sess.run([albedos, nm_pred_xyz, lighting_recon, shading], feed_dict={train_flag:False, inputs_var:img, masks_var:mask})
+[albedos_val, nm_pred_val, lighting_recon_val, shading_val] = sess.run([albedos, nm_pred_xyz, lighting_recon, shading], feed_dict={inputs_var:img, masks_var:mask})
 
 
 # post-process results
