@@ -9,7 +9,6 @@ from utils import render_sphere_nm
 from pathlib import Path
 from pinv import pinv
 
-
 parser = argparse.ArgumentParser(description='InverseRenderNet')
 parser.add_argument('--image', help='Path to test image')
 parser.add_argument('--mask', help='Path to image mask')
@@ -40,25 +39,18 @@ else:
     scale = ori_height / input_size
     input_width = np.int32(scale * input_size)
 
-
 if mask_path:
     mask = io.imread(mask_path)
     # if len is 3 mask contains RGB, convert to greyscale
     if len(mask.shape) == 3:
-        mask = mask[:,:,0]
+        mask = mask[:, :, 0]
     # assert len(mask.shape) == 2, 'if len is 3 mask contains RGB, ensure your save in 1 channel format'
 else:
     # create a 1pixel by 1pixel white mask
-    mask = np.ones((ori_height,ori_width)) * 255
+    mask = np.ones((ori_height, ori_width)) * 255
 
 output_folder_path = Path(args.output)
 output_folder_path.mkdir(exist_ok=True)
-
-
-
-
-
-
 
 # import ipdb
 # ipdb.set_trace()
