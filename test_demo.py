@@ -14,29 +14,46 @@ parser.add_argument('--image', help='Path to test image')
 parser.add_argument('--mask', help='Path to image mask')
 parser.add_argument('--model', help='Path to trained model')
 parser.add_argument('--output', help='Folder saving outputs')
+parser.add_argument('--inputsize', help='Folder saving outputs')
 
 args = parser.parse_args()
 
 img_path = args.image
 mask_path = args.mask
 model_path = args.model
+input_size = args.inputsize
+
+if not input_size:
+    input_size = 100
+input_height = input_size
+input_width = input_size
 
 img = io.imread(img_path)
-mask = io.imread(mask_path)
+
+ori_height, ori_width = img.shape[:2]
+
+if ori_height / ori_width > 1:
+    scale = ori_width / input_size
+    input_height = np.int32(scale * input_size)
+else:
+    scale = ori_height / input_size
+    input_width = np.int32(scale * input_size)
+
+
+if mask_path:
+    mask = io.imread(mask_path)
+    # if len is 3 mask contains RGB, convert to greyscale
+    if len(mask.shape) == 3:
+        mask = mask[:,:,0]
+    # assert len(mask.shape) == 2, 'if len is 3 mask contains RGB, ensure your save in 1 channel format'
+else:
+    # create a 1pixel by 1pixel white mask
+    mask = np.ones((ori_height,ori_width)) * 255
 
 output_folder_path = Path(args.output)
 output_folder_path.mkdir(exist_ok=True)
 
-input_height = 200
-input_width = 200
-ori_height, ori_width = img.shape[:2]
 
-if ori_height / ori_width > 1:
-    scale = ori_width / 200
-    input_height = np.int32(scale * 200)
-else:
-    scale = ori_height / 200
-    input_width = np.int32(scale * 200)
 
 
 def pinv(A, reltol=1e-6):
@@ -102,9 +119,9 @@ irn_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='conv') + tf.g
 model_path = tf.train.get_checkpoint_state(model_path).model_checkpoint_path
 
 total_loss = 0
-sess = tf.InteractiveSession()
+tf_session = tf.InteractiveSession()
 saver = tf.train.Saver(irn_vars)
-saver.restore(sess, model_path)
+saver.restore(tf_session, model_path)
 
 # evaluation
 ori_img = img
@@ -115,8 +132,9 @@ img = img[None, :, :, :]
 mask = cv2.resize(mask, (input_width, input_height), cv2.INTER_NEAREST)
 mask = np.float32(mask == 255)[None, :, :, None]
 
-[albedos_val, nm_pred_val, lighting_recon_val, shading_val] = sess.run([albedos, nm_pred_xyz, lighting_recon, shading],
-                                                                       feed_dict={inputs_var: img, masks_var: mask})
+session_input = [albedos, nm_pred_xyz, lighting_recon, shading]
+session_output = tf_session.run(session_input, feed_dict={inputs_var: img, masks_var: mask})
+[albedos_val, nm_pred_val, lighting_recon_val, shading_val] = session_output
 
 # post-process results
 nm_pred_val = (nm_pred_val + 1.) / 2.
