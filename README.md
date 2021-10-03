@@ -1,6 +1,13 @@
 # InverseRenderNet: Learning single image inverse rendering
 
-This is the implementation of the paper "InverseRenderNet: Learning single image inverse rendering". The model is implemented in tensorflow.
+An implementation of the paper "_InverseRenderNet: Learning single image inverse rendering_", implemented in tensorflow.
+
+Sample image: (more visual samples [here](sample_demos.md))
+
+![](demos/demo_building/presentation.jpg)
+_**input** an image & mask, **outputs** normal, lighting, albedo & shading_
+
+## Credits
 
 If you use our code, please cite the following paper:
 
@@ -11,16 +18,13 @@ If you use our code, please cite the following paper:
         year={2019}
     }
 
+for more info see https://ieeexplore.ieee.org/document/8953662
+
 ## Evaluation
 
 #### Dependencies
-To run our evaluation code, please create your environment based on following dependencies:
-
-    tensorflow 1.12.0
-    python 3.6
-    skimage
-    cv2
-    numpy
+To run our evaluation code, install python packages from requirements.
+This code requires python 3.6, newer version of python can cause issues with installing matching tensorflow version.
 
 #### Pretrained model
 * Download our pretrained model from: [Link](https://drive.google.com/uc?export=download&id=1VKeByvprmWWXSig-7-fxfXs3KA-HG_-P)
@@ -38,7 +42,7 @@ python3 test_demo.py --model /PATH/TO/irn_model --image demo.jpg --mask demo_mas
 
 #### Test on IIW
 * IIW dataset should be downloaded firstly from http://opensurfaces.cs.cornell.edu/publications/intrinsic/#download 
-
+direct link to dataset: http://labelmaterial.s3.amazonaws.com/release/iiw-dataset-release-0.zip
 * Run testing code where you need to specify the path to model and IIW data:
 ```bash
 python3 test_iiw.py --model /PATH/TO/irn_model --iiw /PATH/TO/iiw-dataset
