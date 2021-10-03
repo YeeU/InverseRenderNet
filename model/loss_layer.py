@@ -4,6 +4,7 @@ import importlib
 import tensorflow as tf
 import numpy as np
 import os
+from pinv import pinv
 from model import SfMNet, lambSH_layer, pred_illuDecomp_layer, sup_illuDecomp_layer, reproj_layer
 
 def loss_formulate(albedos, nm_pred, am_sup, nm_gt, inputs, dms, cams, scale_xs, scale_ys, masks, pair_label, preTrain_flag, am_smt_w_var, reproj_w_var, reg_loss_flag=True):
@@ -256,22 +257,6 @@ def cvtLab(RGB):
 
 
 
-
-# compute pseudo inverse for input matrix
-def pinv(A, reltol=1e-6):
-	# compute SVD of input A
-	s, u, v = tf.svd(A)
-
-	# invert s and clear entries lower than reltol*s_max
-	atol = tf.reduce_max(s) * reltol
-	s = tf.where(s>atol, s, atol*tf.ones_like(s))
-	s_inv = tf.diag(1./s)
-
-	# compute v * s_inv * u_t as psuedo inverse
-	return tf.matmul(v, tf.matmul(s_inv, tf.transpose(u)))
-
-
-
 # compute regular 2d convolution on 3d data
 def conv2d_nosum(input, kernel):
 	input_x = input[:,:,:,0:1]
@@ -295,11 +280,3 @@ def conv2d_nosum_2ch(input, kernel):
 	output_y = tf.nn.conv2d(input_y, kernel, strides=(1,1,1,1), padding='SAME')
 
 	return tf.concat([output_x,output_y], axis=-1)
-
-
-
-
-
-
-
-

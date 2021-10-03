@@ -28,20 +28,6 @@ input_width = 200
 
 
 
-# compute pseudo inverse for input matrix
-def pinv(A, reltol=1e-6):
-	# compute SVD of input A
-	s, u, v = tf.svd(A)
-
-	# invert s and clear entries lower than reltol*s_max
-	atol = tf.reduce_max(s) * reltol
-	s = tf.boolean_mask(s, s>atol)
-	s_inv = tf.diag(1./s)
-
-	# compute v * s_inv * u_t as psuedo inverse
-	return tf.matmul(v, tf.matmul(s_inv, tf.transpose(u)))
-
-
 
 inputs_var = tf.placeholder(tf.float32, (None, input_height, input_width, 3))
 masks_var = tf.placeholder(tf.float32, (None, input_height, input_width, 1))
@@ -96,5 +82,3 @@ for counter, test_id in enumerate(test_ids):
 
 
 print("IIW TEST WHDR %f"%(total_loss/len(test_ids)))
-
-
