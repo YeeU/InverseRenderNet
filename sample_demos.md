@@ -41,5 +41,7 @@ output images:
 
 demo output is saved as jpg to reduce filesize of repo. actual output is PNG and includes a PNG copy of the input image.
 input can be jpg.
-results are quite organic and would need some work to use in games, but can form a good base for texture creation
-results with the pretrained mod el are better at a low inputsize (default 200) but sharper at a higher input size (same resolution as input texture)
+
+results are quite organic and would need some work to use in games, but can form a good base for texture creation.
+
+results with the pretrained model are better at a low inputsize (default 200) but sharper at a higher input size (same resolution as input texture)
