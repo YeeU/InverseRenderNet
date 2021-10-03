@@ -59,9 +59,9 @@ def compute_whdr(reflectance, judgements, delta=0.10):
 
         # convert to grayscale and threshold
         l1 = max(1e-10, np.mean(reflectance[
-            int(point1['y'] * rows), int(point1['x'] * cols), ...]))
+                                    int(point1['y'] * rows), int(point1['x'] * cols), ...]))
         l2 = max(1e-10, np.mean(reflectance[
-            int(point2['y'] * rows), int(point2['x'] * cols), ...]))
+                                    int(point2['y'] * rows), int(point2['x'] * cols), ...]))
 
         # convert algorithm value to the same units as human judgements
         if l2 / l1 > 1.0 + delta:
