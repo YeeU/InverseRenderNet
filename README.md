@@ -1,5 +1,7 @@
 # InverseRenderNet: Learning single image inverse rendering
 
+***!! Check out our new work InverseRenderNet++ [paper](https://arxiv.org/abs/2102.06591) and [code](https://github.com/YeeU/InverseRenderNet_v2), which improves the inverse rendering results and shadow handling.***
+
 This is the implementation of the paper "InverseRenderNet: Learning single image inverse rendering". The model is implemented in tensorflow.
 
 If you use our code, please cite the following paper:
