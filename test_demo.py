@@ -9,6 +9,44 @@ from utils import render_sphere_nm
 from pathlib import Path
 from pinv import pinv
 
+
+def post_pro_maps(albedos_val, nm_pred_val, lighting_recon_val, shading_val, output_folder_path):
+    print(type(albedos_val))
+    print(type(nm_pred_val))
+    print(type(lighting_recon_val))
+    print(type(shading_val))
+    print(albedos_val)
+    print(nm_pred_val)
+    print(lighting_recon_val)
+    print(shading_val)
+
+
+    # post-process results
+    nm_pred_val = (nm_pred_val + 1.) / 2.
+
+    albedos_val = cv2.resize(albedos_val[0], (ori_width, ori_height))
+    shading_val = cv2.resize(shading_val[0], (ori_width, ori_height))
+    lighting_recon_val = lighting_recon_val[0]
+    nm_pred_val = cv2.resize(nm_pred_val[0], (ori_width, ori_height))
+
+    albedos_val = (albedos_val - albedos_val.min()) / (albedos_val.max() - albedos_val.min())
+
+    albedos_val = np.uint8(albedos_val * 255.)
+    shading_val = np.uint8(shading_val * 255.)
+    lighting_recon_val = np.uint8(lighting_recon_val * 255.)
+    nm_pred_val = np.uint8(nm_pred_val * 255.)
+
+    input_path = str(output_folder_path / 'img.png')
+    io.imsave(input_path, ori_img)
+    albedo_path = str(output_folder_path / 'albedo.png')
+    io.imsave(albedo_path, albedos_val)
+    shading_path = str(output_folder_path / 'shading.png')
+    io.imsave(shading_path, shading_val)
+    nm_pred_path = str(output_folder_path / 'nm_pred.png')
+    io.imsave(nm_pred_path, nm_pred_val)
+    lighting_path = str(output_folder_path / 'lighting.png')
+    io.imsave(lighting_path, lighting_recon_val)
+
 parser = argparse.ArgumentParser(description='InverseRenderNet')
 parser.add_argument('--image', help='Path to test image')
 parser.add_argument('--mask', help='Path to image mask')
@@ -114,32 +152,11 @@ img = img[None, :, :, :]
 mask = cv2.resize(mask, (input_width, input_height), cv2.INTER_NEAREST)
 mask = np.float32(mask == 255)[None, :, :, None]
 
+
 session_input = [albedos, nm_pred_xyz, lighting_recon, shading]
 session_output = tf_session.run(session_input, feed_dict={inputs_var: img, masks_var: mask})
 [albedos_val, nm_pred_val, lighting_recon_val, shading_val] = session_output
 
-# post-process results
-nm_pred_val = (nm_pred_val + 1.) / 2.
 
-albedos_val = cv2.resize(albedos_val[0], (ori_width, ori_height))
-shading_val = cv2.resize(shading_val[0], (ori_width, ori_height))
-lighting_recon_val = lighting_recon_val[0]
-nm_pred_val = cv2.resize(nm_pred_val[0], (ori_width, ori_height))
 
-albedos_val = (albedos_val - albedos_val.min()) / (albedos_val.max() - albedos_val.min())
-
-albedos_val = np.uint8(albedos_val * 255.)
-shading_val = np.uint8(shading_val * 255.)
-lighting_recon_val = np.uint8(lighting_recon_val * 255.)
-nm_pred_val = np.uint8(nm_pred_val * 255.)
-
-input_path = str(output_folder_path / 'img.png')
-io.imsave(input_path, ori_img)
-albedo_path = str(output_folder_path / 'albedo.png')
-io.imsave(albedo_path, albedos_val)
-shading_path = str(output_folder_path / 'shading.png')
-io.imsave(shading_path, shading_val)
-nm_pred_path = str(output_folder_path / 'nm_pred.png')
-io.imsave(nm_pred_path, nm_pred_val)
-lighting_path = str(output_folder_path / 'lighting.png')
-io.imsave(lighting_path, lighting_recon_val)
+post_pro_maps(albedos_val, nm_pred_val, lighting_recon_val, shading_val, output_folder_path)
